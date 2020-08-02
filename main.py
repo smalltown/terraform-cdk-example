@@ -2,10 +2,10 @@
 
 # for CDK
 from constructs import Construct
-from cdktf import App, TerraformStack, Token
+from cdktf import App, TerraformStack, TerraformOutput, Token
 
 # for terraform provider
-from imports.aws import AwsProvider
+from imports.aws import AwsProvider, DataAwsCallerIdentity
 from imports.local import LocalProvider
 from imports.null import NullProvider
 from imports.random import RandomProvider
@@ -37,7 +37,16 @@ class MyStack(TerraformStack):
         my_eks= Eks(self, 'MyEks',
             cluster_name='my-eks',
             subnets=Token().as_list(my_vpc.private_subnets_output),
-            vpc_id=Token().as_string(my_vpc.vpc_id_output)
+            vpc_id=Token().as_string(my_vpc.vpc_id_output),
+            manage_aws_auth='false'
+        )
+
+        TerraformOutput(self, 'cluster_endpoint',
+            value=my_eks.cluster_endpoint_output
+        )
+
+        TerraformOutput(self, 'create_user_arn',
+            value=DataAwsCallerIdentity(self, 'current').arn
         )
 
 app = App()
